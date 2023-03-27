@@ -4,6 +4,9 @@ const { User } = require('../models');
 
 const router = express.Router();
 
+// Import dotenv
+require('dotenv').config()
+
 // Get all users (requires 'seller' role)
 router.get('/users', validateToken(['seller']), async (req, res) =>
 {
@@ -157,3 +160,53 @@ router.post('/login', async (req, res) =>
         res.status(500).json({ error: 'Server error' });
     }
 });
+
+// Logout from user account (requires authentication)
+router.post('/logout', validateToken(), async (req, res) =>
+{
+    try
+    {
+        const user = await User.findById(req.user.userId);
+        if (!user)
+        {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Remove token from activeSessions
+        user.activeSessions = user.activeSessions.filter((token) => token !== req.token);
+        await user.save();
+
+        // Return success response
+        res.json({ message: 'Successfully logged out' });
+    } catch (err)
+    {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Logout from all user accounts (requires authentication)
+router.post('/logout/all', validateToken(), async (req, res) =>
+{
+    try
+    {
+        const user = await User.findById(req.user.userId);
+        if (!user)
+        {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Remove token from activeSessions
+        user.activeSessions = [];
+        await user.save();
+
+        // Return success response
+        res.json({ message: 'Successfully logged out' });
+    } catch (err)
+    {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+module.exports = router;

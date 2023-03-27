@@ -1,4 +1,6 @@
 const jwt = require('jsonwebtoken');
+// Import dotenv
+require('dotenv').config()
 
 const validateToken = (roles = []) => (req, res, next) =>
 {
