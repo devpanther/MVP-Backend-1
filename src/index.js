@@ -1,14 +1,11 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const app = express();
 
-// Connect to the database
-mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('Database connected'))
-    .catch(err => console.error(err));
+// Set the content type to "application/json"
+app.use(express.json());
 
 // Middleware for validating tokens
 const validateToken = (req, res, next) =>
@@ -31,3 +28,8 @@ const validateToken = (req, res, next) =>
         res.sendStatus(401);
     }
 };
+
+app.listen(3000, () =>
+{
+    console.log('Server listening on port 3000');
+});
