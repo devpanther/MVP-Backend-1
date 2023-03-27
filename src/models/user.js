@@ -8,6 +8,29 @@ const userSchema = new mongoose.Schema({
     activeSessions: [{ type: String }]
 });
 
+
+// Hash the password before saving the user
+userSchema.pre('save', async function (next)
+{
+    const user = this;
+    if (user.isModified('password'))
+    {
+        user.password = await bcrypt.hash(user.password, 8);
+    }
+    next();
+});
+
+// Remove sensitive data before sending the user object to the client
+userSchema.methods.toJSON = function ()
+{
+    const user = this;
+    const userObject = user.toObject();
+    delete userObject.password;
+    delete userObject.tokens;
+    return userObject;
+};
+
 const User = mongoose.model('User', userSchema);
+
 
 module.exports = User;
