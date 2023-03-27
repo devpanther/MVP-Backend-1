@@ -1,4 +1,6 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const { validateToken } = require('../middlewares');
 const { User } = require('../models');
 
@@ -154,7 +156,7 @@ router.post('/login', async (req, res) =>
         }
 
         // Generate JWT token and add it to activeSessions
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET);
         user.activeSessions.push(token);
         await user.save();
 

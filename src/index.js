@@ -14,7 +14,7 @@ mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology
     .catch(err => console.error(err));
 
 // Routes
-app.use('/api/products', require('./routes/products'));
+app.use('/api/trade', require('./routes/products'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/transactions', require('./routes/transactions'));
 
