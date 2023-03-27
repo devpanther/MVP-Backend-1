@@ -20,7 +20,8 @@ const productSchema = new mongoose.Schema({
     },
     productName: {
         type: String,
-        required: true
+        required: true,
+        unique: true,
     },
     sellerId: {
         type: mongoose.Schema.Types.ObjectId,

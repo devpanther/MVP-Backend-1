@@ -75,8 +75,13 @@ router.post('/products', validateToken(['seller']), async (req, res) =>
         res.json(product);
     } catch (err)
     {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+        if (err.code === 11000 && err.keyPattern.productName)
+        {
+            res.status(400).json({ message: 'Product already exists' });
+        } else
+        {
+            res.status(500).json({ message: 'Something went wrong' });
+        }
     }
 });
 
@@ -136,7 +141,7 @@ router.delete('/products/:id', validateToken(['seller']), async (req, res) =>
             return res.status(401).json({ msg: 'Authorization denied' });
         }
 
-        await product.remove();
+        await product.deleteOne();
 
         res.json({ msg: 'Product removed' });
     } catch (err)
