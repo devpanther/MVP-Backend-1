@@ -15,6 +15,14 @@ const validateToken = (roles = []) => (req, res, next) =>
     {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+        /// Check if token is expired
+        if (decoded.exp < Date.now())
+        {
+            return res.status(401).json({ message: 'Token expired' });
+        }
+
+        // Check if user has the required role
+
         if (roles.length && !roles.includes(decoded.role))
         {
             return res.status(403).json({ message: 'Forbidden' });

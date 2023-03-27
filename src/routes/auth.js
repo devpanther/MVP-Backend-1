@@ -156,7 +156,7 @@ router.post('/login', async (req, res) =>
         }
 
         // Generate JWT token and add it to activeSessions
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET);
+        const token = jwt.sign({ id: user._id, role: user.role, exp: Date.now() + 900000 }, process.env.JWT_SECRET); // 15 minutes
         user.activeSessions.push(token);
         await user.save();
 
