@@ -1,6 +1,6 @@
 const express = require('express');
 const { validateToken } = require('../middlewares');
-const { User } = require('../models');
+const { User, Product, Transaction } = require('../models');
 
 const router = express.Router();
 
@@ -8,7 +8,6 @@ const router = express.Router();
 router.post('/deposit', validateToken(['buyer']), async (req, res) =>
 {
     const { coin } = req.body;
-    const { userId } = req;
     const validCoins = [5, 10, 20, 50, 100];
 
     if (!validCoins.includes(coin))
@@ -18,7 +17,7 @@ router.post('/deposit', validateToken(['buyer']), async (req, res) =>
 
     try
     {
-        const user = await User.findById(userId);
+        const user = await User.findById(req.user.id);
         user.deposit += coin;
         await user.save();
         res.json({ deposit: user.deposit });
@@ -29,6 +28,7 @@ router.post('/deposit', validateToken(['buyer']), async (req, res) =>
     }
 });
 
+// Buy product (requires 'buyer' role)
 router.post('/buy', validateToken(['buyer']), async (req, res) =>
 {
     const { productId, amount } = req.body;
@@ -54,7 +54,7 @@ router.post('/buy', validateToken(['buyer']), async (req, res) =>
             return res.status(400).json({ error: 'Not enough deposit to complete the transaction' });
         }
 
-        const change = user.deposit - product.cost * amount;
+        let change = user.deposit - product.cost * amount;
         const coins = [100, 50, 20, 10, 5];
         const changeCoins = [];
 
@@ -67,7 +67,8 @@ router.post('/buy', validateToken(['buyer']), async (req, res) =>
             }
         }
 
-        user.deposit = 0;
+        // Reduce buyer deposit
+        user.deposit -= product.cost * amount
         await user.save();
 
         const transaction = new Transaction({
@@ -85,6 +86,29 @@ router.post('/buy', validateToken(['buyer']), async (req, res) =>
     {
         console.error(err);
         return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// POST /reset (WARNING: This will reset all users' deposit to 0)
+router.post('/reset', validateToken(['buyer']), async (req, res) =>
+{
+    try
+    {
+        const user = await User.findById(req.user.id);
+        if (!user)
+        {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Reset user's deposit to 0
+        user.deposit = 0;
+        await user.save();
+
+        return res.status(200).json({ message: 'Deposit reset successfully' });
+    } catch (err)
+    {
+        console.error(err);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 });
 
