@@ -18,7 +18,7 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/transactions', require('./routes/transactions'));
 
-app.listen(8080, () =>
+app.listen(process.env.PORT, () =>
 {
-    console.log('Server listening on port 3000');
+    console.log(`Server listening on port ${process.env.PORT}`);
 });

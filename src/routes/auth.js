@@ -103,20 +103,26 @@ router.delete('/users/:id', validateToken(['seller']), async (req, res) =>
 // Create new user (does not require authentication)
 router.post('/user', async (req, res) =>
 {
-    const { username, password, deposit, role } = req.body;
-    if (!username || !password || !deposit || !role)
+    const { username, password, role } = req.body;
+    if (!username || !password || !role)
     {
         return res.status(400).json({ message: 'All fields are required' });
     }
+
     try
     {
-        const user = new User({ username, password, deposit, role });
+        const user = new User({ username, password, deposit: 0, role });
         await user.save();
         res.json(user);
     } catch (err)
     {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        if (err.code === 11000 && err.keyPattern.username)
+        {
+            res.status(400).json({ message: 'Username already taken' });
+        } else
+        {
+            res.status(500).json({ message: 'Something went wrong' });
+        }
     }
 });
 
