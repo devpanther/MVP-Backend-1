@@ -7,10 +7,10 @@ const router = express.Router();
 // Deposit coin (requires 'buyer' role)
 router.post('/deposit', validateToken(['buyer']), async (req, res) =>
 {
-    const { coin } = req.body;
+    const { amount } = req.body;
     const validCoins = [5, 10, 20, 50, 100];
 
-    if (!validCoins.includes(coin))
+    if (!validCoins.includes(amount))
     {
         return res.status(400).json({ error: 'Invalid coin value. Only 5, 10, 20, 50 and 100 cents coins are accepted.' });
     }
@@ -18,9 +18,9 @@ router.post('/deposit', validateToken(['buyer']), async (req, res) =>
     try
     {
         const user = await User.findById(req.user.id);
-        user.deposit += coin;
+        user.deposit += amount;
         await User.save(user);
-        res.json({ deposit: user.deposit });
+        res.json({ deposit: user.deposit, message: 'Deposit successful' });
     } catch (error)
     {
         res.status(500).json({ error: 'Could not deposit coin.' });

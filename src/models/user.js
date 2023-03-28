@@ -13,10 +13,8 @@ class UserClass
     // Hash the password before saving the user
     async hashPassword(password)
     {
-        console.log('Hashing password');
         // Generate a salt
         const salt = await bcrypt.genSalt(10);
-        console.log('Salt generated');
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, salt);
 
