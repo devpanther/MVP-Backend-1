@@ -81,41 +81,15 @@ router.delete('/users/:id', validateToken(['seller']), async (req, res) =>
 router.post('/user', async (req, res) =>
 {
     const { username, password, role } = req.body;
-    if (!username || !password || !role)
+    if ((!username || !password))
     {
         return res.status(400).json({ message: 'All fields are required' });
     }
 
-    try
+    // Check if user exists
+    const user = await User.findOne({ username });
+    if (user)
     {
-        const user = await User.createUser({ username, password, role });
-        res.json(user);
-    } catch (err)
-    {
-        if (err.code === 11000)
-        {
-            res.status(400).json({ message: 'Username already taken' });
-        } else
-        {
-            res.status(500).json({ message: 'Something went wrong' });
-        }
-    }
-});
-
-// Login to user account (does not require authentication)
-router.post('/login', async (req, res) =>
-{
-    try
-    {
-        const { username, password } = req.body;
-
-        // Check if user exists
-        const user = await User.findOne({ username });
-        if (!user)
-        {
-            return res.status(400).json({ error: 'Invalid username or password' });
-        }
-
         // Check if password is correct
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid)
@@ -135,10 +109,34 @@ router.post('/login', async (req, res) =>
         await User.save(user);
 
         // Return success response with token
+        return res.json({ token });
+    }
+
+    try
+    {
+        // Needs role to be 'seller' or 'buyer'
+        if (role !== 'seller' && role !== 'buyer')
+        {
+            return res.status(400).json({ message: 'New user, Invalid role' });
+        }
+
+        const user = await User.createUser({ username, password, role });
+
+        // Generate JWT token and add it to activeSessions
+        const token = jwt.sign({ id: user.id, role: user.role, exp: Date.now() + 900000 }, process.env.JWT_SECRET); // 15 minutes
+        user.activeSessions.push(token);
+        await User.save(user);
+
         res.json({ token });
     } catch (err)
     {
-        res.status(500).json({ error: 'Server error' });
+        if (err.code === 11000)
+        {
+            res.status(400).json({ message: 'Username already taken' });
+        } else
+        {
+            res.status(500).json({ message: 'Something went wrong' });
+        }
     }
 });
 

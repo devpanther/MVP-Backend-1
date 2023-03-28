@@ -1,5 +1,4 @@
 const express = require('express');
-const mongoose = require('mongoose');
 // Import dotenv
 require('dotenv').config()
 
@@ -7,9 +6,6 @@ const app = express();
 
 // Set the content type to "application/json"
 app.use(express.json());
-
-// Connect to the database
-
 
 // Routes
 app.use('/api/trade', require('./routes/products'));
