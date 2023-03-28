@@ -9,16 +9,16 @@ const app = express();
 app.use(express.json());
 
 // Connect to the database
-mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('Database connected'))
-    .catch(err => console.error(err));
+
 
 // Routes
 app.use('/api/trade', require('./routes/products'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/transactions', require('./routes/transactions'));
 
-app.listen(process.env.PORT, () =>
+const server = app.listen(process.env.PORT, () =>
 {
     console.log(`Server listening on port ${process.env.PORT}`);
 });
+
+module.exports = server;

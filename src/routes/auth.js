@@ -9,20 +9,6 @@ const router = express.Router();
 // Import dotenv
 require('dotenv').config()
 
-// Get all users (requires 'seller' role)
-router.get('/users', validateToken(['seller']), async (req, res) =>
-{
-    try
-    {
-        const users = await User.find();
-        res.json(users);
-    } catch (err)
-    {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
 // Get user by ID (requires 'seller' role)
 router.get('/users/:id', validateToken(['seller']), async (req, res) =>
 {
@@ -33,54 +19,44 @@ router.get('/users/:id', validateToken(['seller']), async (req, res) =>
         {
             return res.status(404).json({ message: 'User not found' });
         }
-        res.json(user);
+        const sanitizedUser = User.toJSON(user);
+        res.json(sanitizedUser);
     } catch (err)
     {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: err?.message });
     }
 });
 
-// Create new user (requires 'seller' role)
-router.post('/users', validateToken(['seller']), async (req, res) =>
-{
-    const { username, password, deposit, role } = req.body;
-    if (!username || !password || !deposit || !role)
-    {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
-    try
-    {
-        const user = new User({ username, password, deposit, role });
-        await user.save();
-        res.json(user);
-    } catch (err)
-    {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
 
 // Update user by ID (requires 'seller' role)
 router.put('/users/:id', validateToken(['seller']), async (req, res) =>
 {
-    const { username, password, deposit, role } = req.body;
-    if (!username || !password || !deposit || !role)
+    const { username, password, role } = req.body;
+
+    // check if at least one field is provided
+    if (!username && !password && !role)
     {
-        return res.status(400).json({ message: 'All fields are required' });
+        return res.status(400).json({ message: 'At least one field is required' });
     }
+
     try
     {
-        const user = await User.findByIdAndUpdate(req.params.id, { username, password, deposit, role }, { new: true });
+        const user = await User.findByIdAndUpdate(req.params.id, { username, password, role });
         if (!user)
         {
             return res.status(404).json({ message: 'User not found' });
         }
-        res.json(user);
+        const sanitizedUser = User.toJSON(user);
+        res.json(sanitizedUser);
     } catch (err)
     {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        if (err.code === 11000)
+        {
+            res.status(400).json({ message: 'Username already taken' });
+        } else
+        {
+            res.status(500).json({ message: 'Something went wrong' });
+        }
     }
 });
 
@@ -113,12 +89,11 @@ router.post('/user', async (req, res) =>
 
     try
     {
-        const user = new User({ username, password, deposit: 0, role });
-        await user.save();
+        const user = await User.createUser({ username, password, role });
         res.json(user);
     } catch (err)
     {
-        if (err.code === 11000 && err.keyPattern.username)
+        if (err.code === 11000)
         {
             res.status(400).json({ message: 'Username already taken' });
         } else
@@ -158,13 +133,12 @@ router.post('/login', async (req, res) =>
         // Generate JWT token and add it to activeSessions
         const token = jwt.sign({ id: user._id, role: user.role, exp: Date.now() + 900000 }, process.env.JWT_SECRET); // 15 minutes
         user.activeSessions.push(token);
-        await user.save();
+        await User.save(user);
 
         // Return success response with token
         res.json({ token });
     } catch (err)
     {
-        console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
 });
@@ -174,7 +148,7 @@ router.post('/logout', validateToken(), async (req, res) =>
 {
     try
     {
-        const user = await User.findById(req.user.userId);
+        const user = await User.findById(req.user.id);
         if (!user)
         {
             return res.status(404).json({ message: 'User not found' });
@@ -182,13 +156,12 @@ router.post('/logout', validateToken(), async (req, res) =>
 
         // Remove token from activeSessions
         user.activeSessions = user.activeSessions.filter((token) => token !== req.token);
-        await user.save();
+        await User.save(user);
 
         // Return success response
         res.json({ message: 'Successfully logged out' });
     } catch (err)
     {
-        console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -206,13 +179,12 @@ router.post('/logout/all', validateToken(), async (req, res) =>
 
         // Remove token from activeSessions
         user.activeSessions = [];
-        await user.save();
+        await User.save(user);
 
         // Return success response
         res.json({ message: 'Successfully logged out' });
     } catch (err)
     {
-        console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
 });

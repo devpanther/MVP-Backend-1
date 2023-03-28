@@ -19,7 +19,7 @@ router.post('/deposit', validateToken(['buyer']), async (req, res) =>
     {
         const user = await User.findById(req.user.id);
         user.deposit += coin;
-        await user.save();
+        await User.save(user);
         res.json({ deposit: user.deposit });
     } catch (error)
     {
@@ -69,7 +69,7 @@ router.post('/buy', validateToken(['buyer']), async (req, res) =>
 
         // Reduce buyer deposit
         user.deposit -= product.cost * amount
-        await user.save();
+        await User.save(user);
 
         const transaction = new Transaction({
             userId: req.user.id,
@@ -102,7 +102,7 @@ router.post('/reset', validateToken(['buyer']), async (req, res) =>
 
         // Reset user's deposit to 0
         user.deposit = 0;
-        await user.save();
+        await User.save(user);
 
         return res.status(200).json({ message: 'Deposit reset successfully' });
     } catch (err)
