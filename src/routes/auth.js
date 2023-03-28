@@ -73,7 +73,6 @@ router.delete('/users/:id', validateToken(['seller']), async (req, res) =>
         res.json(user);
     } catch (err)
     {
-        console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
 });

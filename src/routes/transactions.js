@@ -23,7 +23,6 @@ router.post('/deposit', validateToken(['buyer']), async (req, res) =>
         res.json({ deposit: user.deposit });
     } catch (error)
     {
-        console.error(error);
         res.status(500).json({ error: 'Could not deposit coin.' });
     }
 });
@@ -40,6 +39,12 @@ router.post('/buy', validateToken(['buyer']), async (req, res) =>
         if (!product)
         {
             return res.status(404).json({ error: 'Product not found' });
+        }
+
+        // Check if amount available is enough
+        if (product.amountAvailable < amount)
+        {
+            return res.status(400).json({ error: 'Not enough products available' });
         }
 
         if (amount <= 0 || !Number.isInteger(amount))
@@ -71,7 +76,12 @@ router.post('/buy', validateToken(['buyer']), async (req, res) =>
         user.deposit -= product.cost * amount
         await User.save(user);
 
-        const transaction = new Transaction({
+        // Reduce product available
+        Product.findByIdAndUpdate(productId, {
+            amountAvailable: product.amountAvailable - amount,
+        })
+
+        const transaction = await Transaction.create({
             userId: req.user.id,
             productId,
             amount,
@@ -79,13 +89,16 @@ router.post('/buy', validateToken(['buyer']), async (req, res) =>
             change: changeCoins
         });
 
-        await transaction.save();
-
         return res.status(200).json({ transaction });
     } catch (err)
     {
-        console.error(err);
-        return res.status(500).json({ error: 'Internal server error' });
+        if (err.code === 11000)
+        {
+            res.status(400).json({ message: err?.message });
+        } else
+        {
+            res.status(500).json({ message: 'Something went wrong' });
+        }
     }
 });
 
@@ -107,8 +120,13 @@ router.post('/reset', validateToken(['buyer']), async (req, res) =>
         return res.status(200).json({ message: 'Deposit reset successfully' });
     } catch (err)
     {
-        console.error(err);
-        return res.status(500).json({ message: 'Internal server error' });
+        if (err.code === 11000)
+        {
+            res.status(400).json({ message: err?.message });
+        } else
+        {
+            res.status(500).json({ message: 'Something went wrong' });
+        }
     }
 });
 

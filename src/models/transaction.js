@@ -1,14 +1,42 @@
-const mongoose = require('mongoose');
+const { v4 } = require("uuid");
 
-const transactionSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-    amount: { type: Number, required: true },
-    totalSpent: { type: Number, required: true },
-    change: { type: [Number], default: [] },
-    timestamp: { type: Date, default: Date.now }
-});
+class TransactionClass
+{
+    constructor()
+    {
+        this.transactions = []; // array to hold transactions
+    }
 
-const Transaction = mongoose.model('Transaction', transactionSchema);
+    async create({ userId, productId, amount, totalSpent, change = [] })
+    {
+        const transaction = { userId, productId, amount, totalSpent, change, timestamp: new Date(), id: v4() };
 
-module.exports = Transaction;
+        // Validate transaction data
+        if (!userId || !productId || !amount || !totalSpent || !Array.isArray(change))
+        {
+            throw new Error("Transaction data is invalid");
+        }
+
+        if (isNaN(amount) || amount < 0)
+        {
+            throw new Error("Amount should be a positive number");
+        }
+
+        if (isNaN(totalSpent) || totalSpent < 0)
+        {
+            throw new Error("Total spent should be a positive number");
+        }
+
+        // Add transaction to local array
+        this.transactions.push(transaction);
+
+        return transaction;
+    }
+
+    async getAllById(id)
+    {
+        return this.transactions.filter(transaction => transaction.userId === id);
+    }
+}
+
+module.exports = TransactionClass;

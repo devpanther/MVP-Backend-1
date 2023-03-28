@@ -5,7 +5,7 @@ const { User, Product } = require('../models');
 const router = express.Router();
 
 // Get all products
-router.get('/products', async (req, res) =>
+router.get('/products', validateToken(), async (req, res) =>
 {
     try
     {
@@ -13,13 +13,12 @@ router.get('/products', async (req, res) =>
         res.json(products);
     } catch (err)
     {
-        console.error(err.message);
         res.status(500).send('Server Error');
     }
 });
 
 // Get product by ID
-router.get('/products/:id', async (req, res) =>
+router.get('/products/:id', validateToken(), async (req, res) =>
 {
     try
     {
@@ -33,14 +32,13 @@ router.get('/products/:id', async (req, res) =>
         res.json(product);
     } catch (err)
     {
-        console.error(err.message);
-
-        if (err.kind === 'ObjectId')
+        if (err.code === 11000)
         {
-            return res.status(404).json({ msg: 'Product not found' });
+            res.status(400).json({ message: err?.message });
+        } else
+        {
+            res.status(500).json({ message: 'Something went wrong' });
         }
-
-        res.status(500).send('Server Error');
     }
 });
 
@@ -63,21 +61,19 @@ router.post('/products', validateToken(['seller']), async (req, res) =>
             return res.status(401).json({ msg: 'Authorization denied' });
         }
 
-        const product = new Product({
+        const product = await Product.createProduct({
             productName,
             cost,
             amountAvailable,
             sellerId: req.user.id,
         });
 
-        await product.save();
-
         res.json(product);
     } catch (err)
     {
-        if (err.code === 11000 && err.keyPattern.productName)
+        if (err.code === 11000)
         {
-            res.status(400).json({ message: 'Product already exists' });
+            res.status(400).json({ message: err?.message });
         } else
         {
             res.status(500).json({ message: 'Something went wrong' });
@@ -108,16 +104,14 @@ router.put('/products/:id', validateToken(['seller']), async (req, res) =>
         product.cost = cost;
         product.amountAvailable = amountAvailable;
 
-        await product.save();
+        await Product.save(product);
 
         res.json(product);
     } catch (err)
     {
-        console.error(err.message);
-
-        if (err.kind === 'ObjectId')
+        if (err.code === 11000)
         {
-            return res.status(404).json({ msg: 'Product not found' });
+            return res.status(400).json({ message: err?.message });
         }
 
         res.status(500).send('Server Error');
@@ -141,16 +135,14 @@ router.delete('/products/:id', validateToken(['seller']), async (req, res) =>
             return res.status(401).json({ msg: 'Authorization denied' });
         }
 
-        await product.deleteOne();
+        await Product.findByIdAndDelete(req.params.id);
 
         res.json({ msg: 'Product removed' });
     } catch (err)
     {
-        console.error(err.message);
-
-        if (err.kind === 'ObjectId')
+        if (err.code === 11000)
         {
-            return res.status(404).json({ msg: 'Product not found' });
+            return res.status(400).json({ message: err?.message });
         }
 
         res.status(500).send('Server Error');

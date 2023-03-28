@@ -1,8 +1,10 @@
 const UserClass = require('./user');
-const Product = require('./product');
-const Transaction = require('./transaction');
+const ProductClass = require('./product');
+const TransactionClass = require('./transaction');
 
 const User = new UserClass();
+const Product = new ProductClass();
+const Transaction = new TransactionClass();
 
 module.exports = {
     User,

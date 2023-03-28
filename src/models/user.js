@@ -83,7 +83,6 @@ class UserClass
         if (update.username && update.username !== user.username)
         {
             const userExists = this.users.some(user => user.username === update.username);
-            console.log(userExists)
             if (userExists)
             {
                 // throw an error if the user already exists with code 11000
