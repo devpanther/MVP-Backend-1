@@ -20,7 +20,6 @@
   "version": "1.0.0",
   "main": "index.js",
   "keywords": [],
-  "author": "Godstime",
   "description": "",
   "devDependencies": {
     "jest": "^29.5.0"
