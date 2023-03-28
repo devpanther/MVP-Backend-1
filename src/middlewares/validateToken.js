@@ -26,7 +26,7 @@ const validateToken = (roles = []) => async (req, res, next) =>
 
         if (roles.length && !roles.includes(decoded.role))
         {
-            return res.status(403).json({ message: 'Forbidden' });
+            return res.status(403).json({ message: 'Interaction Forbidden' });
         }
 
         const user = await User.findById(decoded.id);
@@ -41,7 +41,7 @@ const validateToken = (roles = []) => async (req, res, next) =>
         next();
     } catch (error)
     {
-        res.status(401).json({ message: 'Token invalid' });
+        res.status(401).json({ message: 'Invalid token' });
     }
 };
 
