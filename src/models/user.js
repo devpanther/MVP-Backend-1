@@ -77,6 +77,13 @@ class UserClass
     async findByIdAndUpdate(id, update)
     {
         const user = await this.findById(id);
+
+        const index = this.users.findIndex(u => u.id === user.id);
+        if (index === -1)
+        {
+            throw new Error('User not found');
+        }
+
         // if username is not changed, check if the new username is already taken
         if (update.username && update.username !== user.username)
         {
@@ -94,9 +101,20 @@ class UserClass
         {
             update.password = await this.hashPassword(update.password);
         }
+
+        if (update.deposit)
+        {
+            update.deposit = Number(update.deposit);
+        }
+
+        if (update.role)
+        {
+            update.role = update.role.toLowerCase();
+        }
+
         // Update the user object with the new values
-        Object.keys(update).forEach(key => user[key] = update[key]);
-        return user;
+        this.users[index] = { ...user, ...update };
+        return { ...user, ...update };
     }
 
     // Method to find a user by id and delete it

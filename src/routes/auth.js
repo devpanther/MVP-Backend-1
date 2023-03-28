@@ -10,7 +10,7 @@ const router = express.Router();
 require('dotenv').config()
 
 // Get user by ID (requires 'seller' role)
-router.get('/users/:id', validateToken(['seller']), async (req, res) =>
+router.get('/user/:id', validateToken(['seller']), async (req, res) =>
 {
     try
     {
@@ -29,7 +29,7 @@ router.get('/users/:id', validateToken(['seller']), async (req, res) =>
 
 
 // Update user by ID (requires 'seller' role)
-router.put('/users/:id', validateToken(['seller']), async (req, res) =>
+router.put('/user', validateToken(['seller']), async (req, res) =>
 {
     const { username, password, role } = req.body;
 
@@ -41,7 +41,7 @@ router.put('/users/:id', validateToken(['seller']), async (req, res) =>
 
     try
     {
-        const user = await User.findByIdAndUpdate(req.params.id, { username, password, role });
+        const user = await User.findByIdAndUpdate(req.user.id, { username, password, role });
         if (!user)
         {
             return res.status(404).json({ message: 'User not found' });
@@ -61,11 +61,11 @@ router.put('/users/:id', validateToken(['seller']), async (req, res) =>
 });
 
 // Delete user by ID (requires 'seller' role)
-router.delete('/users/:id', validateToken(['seller']), async (req, res) =>
+router.delete('/user', validateToken(['seller']), async (req, res) =>
 {
     try
     {
-        const user = await User.findByIdAndDelete(req.params.id);
+        const user = await User.findByIdAndDelete(req.user.id);
         if (!user)
         {
             return res.status(404).json({ message: 'User not found' });
@@ -109,7 +109,7 @@ router.post('/user', async (req, res) =>
         await User.save(user);
 
         // Return success response with token
-        return res.json({ token });
+        return res.json({ token, id: user.id });
     }
 
     try
@@ -127,7 +127,7 @@ router.post('/user', async (req, res) =>
         user.activeSessions.push(token);
         await User.save(user);
 
-        res.json({ token });
+        res.json({ token, id: user.id });
     } catch (err)
     {
         if (err.code === 11000)
