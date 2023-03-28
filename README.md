@@ -9,8 +9,8 @@ Design an API for a vending machine, allowing users with a “seller” role to 
 3.  Create a `.env` file in the root directory of the project and add the following environment variables:
 
 ```Makefile
-    JWT_SECRET="hfY0zgEsCpSXTx87VOAUCeIdfgjxXv5XO"
-    PORT=8080
+JWT_SECRET="hfY0zgEsCpSXTx87VOAUCeIdfgjxXv5XO"
+PORT=8080
 ```
 
 4.  Start the server using the command npm start. The server should now be running on http://localhost:8080.
