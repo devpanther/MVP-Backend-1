@@ -45,7 +45,35 @@ router.get('/products/:id', validateToken(), async (req, res) =>
 // Create a product
 router.post('/products', validateToken(['seller']), async (req, res) =>
 {
-    const { productName, cost, amountAvailable } = req.body;
+    const { productName, cost, quantity } = req.body;
+
+    // Simple validation
+    if (!productName)
+    {
+        return res.status(400).json({ error: 'Product name is required' });
+    }
+
+    if (!cost)
+    {
+        return res.status(400).json({ error: 'Cost is required' });
+    }
+
+    // Check if cost is a number and greater than 0
+    if (isNaN(cost) || cost <= 0)
+    {
+        return res.status(400).json({ error: 'Cost must be a number greater than 0' });
+    }
+
+    if (!quantity)
+    {
+        return res.status(400).json({ error: 'Quantity is required' });
+    }
+
+    // Check if amount available is a number and greater than 0
+    if (isNaN(quantity) || quantity <= 0)
+    {
+        return res.status(400).json({ error: 'Quantity must be a number greater than 0' });
+    }
 
     try
     {
@@ -64,11 +92,11 @@ router.post('/products', validateToken(['seller']), async (req, res) =>
         const product = await Product.createProduct({
             productName,
             cost,
-            amountAvailable,
+            amountAvailable: quantity,
             sellerId: req.user.id,
         });
 
-        res.json(product);
+        res.json({ product, message: 'Product successfully created' });
     } catch (err)
     {
         if (err.code === 11000)
@@ -84,7 +112,7 @@ router.post('/products', validateToken(['seller']), async (req, res) =>
 // Update a product
 router.put('/products/:id', validateToken(['seller']), async (req, res) =>
 {
-    const { productName, cost, amountAvailable } = req.body;
+    const { productName, cost, quantity } = req.body;
 
     try
     {
@@ -100,13 +128,38 @@ router.put('/products/:id', validateToken(['seller']), async (req, res) =>
             return res.status(401).json({ msg: 'Authorization denied' });
         }
 
-        product.productName = productName;
-        product.cost = cost;
-        product.amountAvailable = amountAvailable;
+        // Simple validation
 
-        await Product.save(product);
+        if (productName)
+        {
+            product.productName = productName;
+        }
 
-        res.json(product);
+        if (cost)
+        {
+            // Check if cost is a number and greater than 0
+            if (isNaN(cost) || cost <= 0)
+            {
+                return res.status(400).json({ error: 'Cost must be a number greater than 0' });
+            }
+
+            product.cost = cost;
+        }
+
+        if (quantity)
+        {
+            // Check if amount available is a number and greater than 0
+            if (isNaN(quantity) || quantity <= 0)
+            {
+                return res.status(400).json({ error: 'Quantity must be a number greater than 0' });
+            }
+
+            product.amountAvailable = quantity;
+        };
+
+        let newProduct = await Product.findByIdAndUpdate(req.params.id, product);
+
+        res.json({ product: newProduct, message: 'Product successfully updated' });
     } catch (err)
     {
         if (err.code === 11000)

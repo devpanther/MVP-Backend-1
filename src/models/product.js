@@ -60,7 +60,9 @@ class ProductClass
 
         if (!product)
         {
-            throw new Error('Product not found');
+            const error = new Error('Product not found');
+            error.code = 11000;
+            throw error;
         }
 
         return product;
@@ -76,7 +78,16 @@ class ProductClass
     async findByIdAndUpdate(id, update)
     {
         const product = await this.findById(id);
-        // if product name is not changed, check if the new product name is already taken
+
+        const index = this.products.findIndex(p => p.id === product.id);
+        if (index === -1)
+        {
+            const error = new Error('Product not found');
+            error.code = 11000;
+            throw error;
+        }
+
+        // if product name is changed, check if the new product name is already taken
         if (update.productName && update.productName !== product.productName)
         {
             const productExists = this.products.some(product => product.productName === update.productName);
@@ -95,29 +106,12 @@ class ProductClass
             this.validateCost(product.cost);
         }
 
-        // Update the product object with the new values
-        Object.keys(update).forEach(key => product[key] = update[key]);
-        return product;
+        // Update the product
+        this.products[index] = { ...product, ...update };
+
+        return { ...product, ...update };
     }
 
-    // .save() method to save the user to the database - UPDATE
-    async save(product)
-    {
-        const index = this.products.findIndex(p => p.id === product.id);
-        if (index === -1)
-        {
-            throw new Error('Product not found');
-        }
-
-        if (product?.cost)
-        {
-            // Validate cost
-            this.validateCost(product.cost);
-        }
-
-        this.products[index] = product;
-        return product;
-    }
 
     // Method to find a product by id and delete it
     async findByIdAndDelete(id)

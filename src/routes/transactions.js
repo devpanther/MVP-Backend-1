@@ -32,14 +32,25 @@ router.post('/buy', validateToken(['buyer']), async (req, res) =>
 {
     const { productId, amount } = req.body;
 
+    // Simple validation
+    if (!productId)
+    {
+        return res.status(400).json({ error: 'Product ID is required' });
+    }
+
+    if (!amount)
+    {
+        return res.status(400).json({ error: 'Amount is required' });
+    }
+
+    if (Number.isNaN(amount))
+    {
+        return res.status(400).json({ error: 'Amount should be a number' });
+    }
+
     try
     {
         const product = await Product.findById(productId);
-
-        if (!product)
-        {
-            return res.status(404).json({ error: 'Product not found' });
-        }
 
         // Check if amount available is enough
         if (product.amountAvailable < amount)
@@ -89,7 +100,7 @@ router.post('/buy', validateToken(['buyer']), async (req, res) =>
             change: changeCoins
         });
 
-        return res.status(200).json({ transaction });
+        return res.status(200).json({ transaction, message: "Purchase successful" });
     } catch (err)
     {
         if (err.code === 11000)
