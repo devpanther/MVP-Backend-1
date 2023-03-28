@@ -131,7 +131,7 @@ router.post('/login', async (req, res) =>
         }
 
         // Generate JWT token and add it to activeSessions
-        const token = jwt.sign({ id: user._id, role: user.role, exp: Date.now() + 900000 }, process.env.JWT_SECRET); // 15 minutes
+        const token = jwt.sign({ id: user.id, role: user.role, exp: Date.now() + 900000 }, process.env.JWT_SECRET); // 15 minutes
         user.activeSessions.push(token);
         await User.save(user);
 
@@ -143,8 +143,8 @@ router.post('/login', async (req, res) =>
     }
 });
 
-// Logout from user account (requires authentication)
-router.post('/logout', validateToken(), async (req, res) =>
+// Logout from all user accounts (requires authentication)
+router.post('/logout/all', validateToken(), async (req, res) =>
 {
     try
     {
@@ -154,27 +154,17 @@ router.post('/logout', validateToken(), async (req, res) =>
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Remove token from activeSessions
-        user.activeSessions = user.activeSessions.filter((token) => token !== req.token);
-        await User.save(user);
-
-        // Return success response
-        res.json({ message: 'Successfully logged out' });
-    } catch (err)
-    {
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
-// Logout from all user accounts (requires authentication)
-router.post('/logout/all', validateToken(), async (req, res) =>
-{
-    try
-    {
-        const user = await User.findById(req.user.userId);
-        if (!user)
+        // Check if there is an active session using the user's account
+        if (user.activeSessions.length === 0)
         {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(400).json({ error: 'There is no active session using your account' });
+        }
+
+        // Check if the token is valid
+        const token = req.headers.authorization.split(' ')[1];
+        if (!user.activeSessions.includes(token))
+        {
+            return res.status(400).json({ error: 'Invalid token' });
         }
 
         // Remove token from activeSessions

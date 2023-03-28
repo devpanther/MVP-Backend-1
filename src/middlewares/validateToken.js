@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
 // Import dotenv
 require('dotenv').config()
+const { User } = require('../models');
 
-const validateToken = (roles = []) => (req, res, next) =>
+const validateToken = (roles = []) => async (req, res, next) =>
 {
     const token = req.headers.authorization?.split(' ')[1]; // extract token from header
 
@@ -28,11 +29,18 @@ const validateToken = (roles = []) => (req, res, next) =>
             return res.status(403).json({ message: 'Forbidden' });
         }
 
+        const user = await User.findById(decoded.id);
+
+        // check if token matches any of the user's active sessions
+        if (!user.activeSessions.includes(token))
+        {
+            return res.status(401).json({ message: 'Invalid token' });
+        }
+
         req.user = decoded;
         next();
     } catch (error)
     {
-        console.error(error);
         res.status(401).json({ message: 'Token invalid' });
     }
 };
