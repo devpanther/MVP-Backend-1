@@ -78,7 +78,7 @@ class UserClass
     {
         const user = await this.findById(id);
 
-        const index = this.users.findIndex(u => u.id === user.id);
+        const index = this.users.findIndex(u => u.id === id);
         if (index === -1)
         {
             throw new Error('User not found');
